@@ -1,0 +1,102 @@
+﻿@page "/roles"
+@rendermode InteractiveServer
+@inject RolServicio Servicio
+
+<PageTitle>Roles</PageTitle>
+
+<h3>Roles</h3>
+
+<div class="mb-3">
+    <input @bind="nombre" placeholder="Nombre del rol" class="form-control d-inline-block w-auto" />
+
+    @if (idEditando == null)
+    {
+        <button class="btn btn-primary" @onclick="Guardar">Guardar</button>
+    }
+    else
+    {
+        <button class="btn btn-success" @onclick="Actualizar">Actualizar</button>
+        <button class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+    }
+</div>
+
+@if (roles == null)
+{
+    <p>Cargando...</p>
+}
+else if (roles.Count == 0)
+{
+    <p>No hay roles todavía.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nombre</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in roles)
+            {
+                <tr>
+                    <td>@r.IdRol</td>
+                    <td>@r.Nombre</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" @onclick="() => Editar(r)">Editar</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Eliminar(r.IdRol)">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<RolSalida>? roles;
+    private string nombre = "";
+    private int? idEditando;
+
+    protected override async Task OnInitializedAsync()
+    {
+        roles = await Servicio.ObtenerTodos();
+    }
+
+    private async Task Guardar()
+    {
+        if (string.IsNullOrWhiteSpace(nombre)) return;
+
+        await Servicio.Crear(new RolGuardar { Nombre = nombre });
+        nombre = "";
+        roles = await Servicio.ObtenerTodos();
+    }
+
+    private void Editar(RolSalida rol)
+    {
+        idEditando = rol.IdRol;
+        nombre = rol.Nombre ?? "";
+    }
+
+    private async Task Actualizar()
+    {
+        if (idEditando == null || string.IsNullOrWhiteSpace(nombre)) return;
+
+        await Servicio.Modificar(new RolSalida { IdRol = idEditando.Value, Nombre = nombre });
+        Cancelar();
+        roles = await Servicio.ObtenerTodos();
+    }
+
+    private void Cancelar()
+    {
+        idEditando = null;
+        nombre = "";
+    }
+
+    private async Task Eliminar(int id)
+    {
+        await Servicio.Eliminar(id);
+        roles = await Servicio.ObtenerTodos();
+    }
+}
